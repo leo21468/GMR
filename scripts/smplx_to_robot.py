@@ -87,6 +87,7 @@ if __name__ == "__main__":
         tgt_robot=args.robot,
     )
     
+    # initialize the viewer
     robot_motion_viewer = RobotMotionViewer(robot_type=args.robot,
                                             motion_fps=aligned_fps,
                                             transparent_robot=0,
@@ -110,7 +111,8 @@ if __name__ == "__main__":
     i = 0
 
     while True:
-        if args.loop:
+        # off-by-one looping
+        if args.loop: 
             i = (i + 1) % len(smplx_data_frames)
         else:
             i += 1
@@ -130,7 +132,7 @@ if __name__ == "__main__":
         smplx_data = smplx_data_frames[i]
 
         # retarget
-        qpos = retarget.retarget(smplx_data)
+        qpos = retarget.retarget(smplx_data) # get the form of root_pos(3), root_rot(4, wxyz), dof_pos(n)
 
         # visualize
         robot_motion_viewer.step(
@@ -141,7 +143,7 @@ if __name__ == "__main__":
             # human_motion_data=smplx_data,
             human_pos_offset=np.array([0.0, 0.0, 0.0]),
             show_human_body_name=False,
-            rate_limit=args.rate_limit,
+            rate_limit=args.rate_limit, # control the speed of robot motion to match human motion or fast as possible
         )
         if args.save_path is not None:
             qpos_list.append(qpos)

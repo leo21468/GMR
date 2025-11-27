@@ -65,10 +65,11 @@ class GeneralMotionRetargeting:
         else:
             ratio = 1.0
             
-        # adjust the human scale table
+        # adjust the human scale table proportionally, which may be updated in the future
         for key in ik_config["human_scale_table"].keys():
             ik_config["human_scale_table"][key] = ik_config["human_scale_table"][key] * ratio
     
+        # Use two different IK match tables because hierarchical IK and multiple coefficients can be applied
 
         # used for retargeting
         self.ik_match_table1 = ik_config["ik_match_table1"]
@@ -95,7 +96,7 @@ class GeneralMotionRetargeting:
         self.task_errors1 = {}
         self.task_errors2 = {}
 
-        self.ik_limits = [mink.ConfigurationLimit(self.model)]
+        self.ik_limits = [mink.ConfigurationLimit(self.model)] # mink is used to solve IK
         if use_velocity_limit:
             VELOCITY_LIMITS = {k: 3*np.pi for k in self.robot_motor_names.keys()}
             self.ik_limits.append(mink.VelocityLimit(self.model, VELOCITY_LIMITS)) 
@@ -116,14 +117,14 @@ class GeneralMotionRetargeting:
                 task = mink.FrameTask(
                     frame_name=frame_name,
                     frame_type="body",
-                    position_cost=pos_weight,
+                    position_cost=pos_weight, # determine how much to follow the position
                     orientation_cost=rot_weight,
-                    lm_damping=1,
+                    lm_damping=1, # stable the IK solving
                 )
                 self.human_body_to_task1[body_name] = task
                 self.pos_offsets1[body_name] = np.array(pos_offset) - self.ground
                 self.rot_offsets1[body_name] = R.from_quat(
-                    rot_offset, scalar_first=True
+                    rot_offset, scalar_first=True # stands for (w, x, y, z)
                 )
                 self.tasks1.append(task)
                 self.task_errors1[task] = []
@@ -261,7 +262,7 @@ class GeneralMotionRetargeting:
         # transform the human data back to the global frame
         human_data_global = {human_root_name: (scaled_root_pos, root_quat)}
         for body_name in human_data_local.keys():
-            human_data_global[body_name] = (human_data_local[body_name] + scaled_root_pos, human_data[body_name][1])
+            human_data_global[body_name] = (human_data_local[body_name] + scaled_root_pos, human_data[body_name][1]) # keep quat the same
 
         return human_data_global
     
